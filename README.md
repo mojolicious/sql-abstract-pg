@@ -1,7 +1,7 @@
 
 # SQL::Abstract::Pg [![](https://github.com/mojolicious/sql-abstract-pg/workflows/linux/badge.svg)](https://github.com/mojolicious/sql-abstract-pg/actions)
 
-  [PostgreSQL](https://www.postgresql.org) features for [SQL::Abstract::Pg](https://metacpan.org/pod/SQL::Abstract::Pg).
+  [PostgreSQL](https://www.postgresql.org) features for [SQL::Abstract](https://metacpan.org/pod/SQL::Abstract).
 
 ```perl
 use SQL::Abstract::Pg;
