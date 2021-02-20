@@ -6,7 +6,7 @@ use utf8;
 
 use parent 'SQL::Abstract';
 
-our $VERSION = '1.0';
+our $VERSION = '1.01';
 
 BEGIN { *puke = \&SQL::Abstract::puke }
 
