@@ -165,24 +165,33 @@ sub _table {
     else                     { push @table, $t }
   }
 
+  my @bind;
   $table = $self->SUPER::_table(\@table);
-  my $sep = $self->{name_sep} // '';
   for my $join (@join) {
     puke 'join must be in the form [$table, $fk => $pk]' if @$join < 3;
     my ($type, $name, $fk, $pk, @morekeys) = @$join % 2 == 0 ? @$join : ('', @$join);
     $table
       .= $self->_sqlcase($type =~ /^-(.+)$/ ? " $1 join " : ' join ')
-      . $self->_quote($name)
+      . $self->_table($name)
       . $self->_sqlcase(' on ') . '(';
     do {
       $table
-        .= $self->_quote(index($fk, $sep) > 0 ? $fk                      : "$name.$fk") . ' = '
-        . $self->_quote(index($pk, $sep) > 0  ? $pk                      : "$table[0].$pk")
-        . (@morekeys                          ? $self->_sqlcase(' and ') : ')');
+        .= $self->_quote_key($name, $fk, \@bind)
+        . (ref $pk ? ' ' : ' = ')
+        . $self->_quote_key($table[0], $pk, \@bind)
+        . (@morekeys ? $self->_sqlcase(' and ') : ')');
     } while ($fk, $pk, @morekeys) = @morekeys;
   }
 
-  return $table;
+  return $table, @bind;
+}
+
+sub _quote_key {
+  my ($self, $t, $k, $bind) = @_;
+  my ($sql, @bind)
+    = ref $k ? $self->_recurse_where($k) : $self->_quote(index($k, $self->{name_sep} // '') > 0 ? $k : "$t.$k");
+  push @$bind, @bind if @bind;
+  return $sql;
 }
 
 1;
@@ -284,6 +293,9 @@ with tables to generate C<JOIN> clauses for.
 
   # "SELECT * FROM a LEFT JOIN b ON (b.a_id = a.id AND b.a_id2 = a.id2)"
   $abstract->select(['a', [-left => 'b', a_id => 'id', a_id2 => 'id2']]);
+
+  # "SELECT * FROM foo JOIN bar AS baz ON (bar.id < baz.id)"
+  $abstract->select(['foo', [{'bar' => {-as => 'baz'}}, 'bar.id' => {'<' => 'baz.id'}]]);
 
 =head2 ORDER BY
 
