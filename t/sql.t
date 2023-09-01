@@ -19,7 +19,7 @@ my $abstract = SQL::Abstract::Pg->new(array_datatypes => 1, name_sep => '.', quo
 subtest 'Basics' => sub {
   is_query [$abstract->insert('foo', {bar => 'baz'})], ['INSERT INTO "foo" ( "bar") VALUES ( ? )', 'baz'],
     'right query';
-  is_query [$abstract->select('foo', '*')], ['SELECT * FROM "foo"'], 'right query';
+  is_query [$abstract->select('foo', '*')],            ['SELECT * FROM "foo"'],               'right query';
   is_query [$abstract->select(['foo', 'bar', 'baz'])], ['SELECT * FROM "foo", "bar", "baz"'], 'right query';
 };
 
@@ -146,6 +146,25 @@ subtest 'JOIN' => sub {
       . ' AND "bar"."foo_id2" = "foo"."id2"'
       . ' AND "bar"."foo_id3" = "foo"."id3"' . ')'
     ], 'right query';
+};
+
+subtest 'JOIN AS' => sub {
+  my @sql = $abstract->select(['foo', [{'bar' => {-as => 'baz'}}, 'baz.foo_id' => 'id']]);
+  is_query \@sql, ['SELECT * FROM "foo" JOIN "bar" AS "baz" ON ("baz"."foo_id" = "foo"."id")'], 'right query';
+};
+
+subtest 'JOIN AS (recurse where)' => sub {
+  my @sql = $abstract->select([
+    'foo',
+    [-left => 'bar', id => 'id'],
+    [{'bar' => {-as => 'baz'}}, 'bar.foo_id' => 'id', 'bar.id' => {'<' => 'baz.id'}]
+  ]);
+  is_query \@sql,
+    [
+    'SELECT * FROM "foo" LEFT JOIN "bar" ON ("bar"."id" = "foo"."id") JOIN "bar" AS "baz" ON ("bar"."foo_id" = "foo"."id" AND "bar"."id" < "baz"."id")'
+    ], 'right query';
+  @sql = $abstract->select(['foo', [{'bar' => {-as => 'baz'}}, 'baz.id' => {'<' => 'baz.id'}]]);
+  is_query \@sql, ['SELECT * FROM "foo" JOIN "bar" AS "baz" ON ("baz"."id" < "baz"."id")'], 'right query';
 };
 
 subtest 'JOIN (unsupported value)' => sub {
