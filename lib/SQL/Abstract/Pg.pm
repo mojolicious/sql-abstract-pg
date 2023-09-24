@@ -172,7 +172,7 @@ sub _table {
     my ($type, $name, $fk, $pk, @morekeys) = @$join % 2 == 0 ? @$join : ('', @$join);
     $table
       .= $self->_sqlcase($type =~ /^-(.+)$/ ? " $1 join " : ' join ')
-      . $self->_quote($name)
+      . $self->_table($name)
       . $self->_sqlcase(' on ') . '(';
     do {
       $table
@@ -284,6 +284,9 @@ with tables to generate C<JOIN> clauses for.
 
   # "SELECT * FROM a LEFT JOIN b ON (b.a_id = a.id AND b.a_id2 = a.id2)"
   $abstract->select(['a', [-left => 'b', a_id => 'id', a_id2 => 'id2']]);
+
+  # "SELECT * FROM foo f JOIN bar b ON (b.foo_id = f.id)"
+  $abstract->select([\'foo f', [\'bar b', 'b.foo_id' => 'f.id']]);
 
 =head2 ORDER BY
 

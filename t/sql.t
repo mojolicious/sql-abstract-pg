@@ -146,6 +146,12 @@ subtest 'JOIN' => sub {
       . ' AND "bar"."foo_id2" = "foo"."id2"'
       . ' AND "bar"."foo_id3" = "foo"."id3"' . ')'
     ], 'right query';
+  @sql = $abstract->select([\'"foo" "f"', [\'"bar" "b"', 'b.foo_id' => 'f.id']]);
+  is_query \@sql, ['SELECT * FROM "foo" "f" JOIN "bar" "b" ON ("b"."foo_id" = "f"."id")'], 'right query';
+  @sql = $abstract->select([\'"foo" "f"', [-left, \'"bar" "b"', 'b.foo_id' => 'f.id']]);
+  is_query \@sql, ['SELECT * FROM "foo" "f" LEFT JOIN "bar" "b" ON ("b"."foo_id" = "f"."id")'], 'right query';
+  @sql = $abstract->select(['foo', [\'"bar" "b"', 'b.foo_id' => 'id']]);
+  is_query \@sql, ['SELECT * FROM "foo" JOIN "bar" "b" ON ("b"."foo_id" = "foo"."id")'], 'right query';
 };
 
 subtest 'JOIN (unsupported value)' => sub {
